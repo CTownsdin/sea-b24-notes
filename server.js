@@ -12,6 +12,13 @@ mongoose.connect(url);
 require('./routes/notes_routes')(app);
 
 app.set('port', process.env.PORT || 3000);
+
+app.get('/', function (res, req) {
+    res.json({'msg':'Hello, this server API'});
+});
+
+
+
 app.listen(app.get('port'), function() {
   console.log('server running on port: %d', app.get('port'));
 });
