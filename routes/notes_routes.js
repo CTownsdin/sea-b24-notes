@@ -39,4 +39,8 @@ module.exports = function(app) {
       res.json({msg: 'success!'});
     });
   });
+
+  app.get('/', function (req, res) {
+    res.json({'msg':'Hello, this server API'});
+  });
 };
