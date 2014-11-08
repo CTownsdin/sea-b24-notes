@@ -13,7 +13,7 @@ require('./routes/notes_routes')(app);
 
 app.set('port', process.env.PORT || 3000);
 
-app.get('/', function (res, req) {
+app.get('/', function (req, res) {
     res.json({'msg':'Hello, this server API'});
 });
 
