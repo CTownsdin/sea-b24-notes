@@ -1,3 +1,5 @@
+'use strict';
+
 process.env.MONGO_URL = 'mongodb://localhost/notes_test';
 var chai = require('chai');
 var chaihttp = require('chai-http');
@@ -7,59 +9,85 @@ require('../../server');
 
 var expect = chai.expect;
 
-describe('basic notes crud', function() {
-  var id;
-  it('should be able to create a note', function(done) {
-    chai.request('http://localhost:3000')
-    .post('/api/notes')
-    .send({noteBody: 'hello world'})
-    .end(function(err, res) {
-      expect(err).to.eql(null);
-      expect(res.body.noteBody).to.eql('hello world');
-      expect(res.body).to.have.property('_id');
-      id = res.body._id;
-      done();
-    });
-  });
+describe('NotesServer user login testing', function() {
 
-  it('should be able to get an index', function(done) {
-    chai.request('http://localhost:3000')
-    .get('/api/notes')
-    .end(function(err, res) {
-      expect(err).to.eql(null);
-      expect(Array.isArray(res.body)).to.be.true;
-      done();
-    });
-  });
+    var id;
+    var aJWT;
 
-  it('should be able to get a single note', function(done) {
-    chai.request('http://localhost:3000')
-    .get('/api/notes/' + id)
-    .end(function(err, res) {
-      expect(err).to.eql(null);
-      expect(res.body.noteBody).to.eql('hello world');
-      done();
-    });
-  });
+    // NOTE TO TESTER, manually incriment useremail each time for easy new user testing !
+    //
+    // TODO:  add something that drops the DB between tests, to make Travis CI happy !
 
-  it('should be able to update a note', function(done) {
-    chai.request('http://localhost:3000')
-    .put('/api/notes/' + id)
-    .send({noteBody: 'new note body'})
-    .end(function(err, res) {
-      expect(err).to.eql(null);
-      expect(res.body.noteBody).to.eql('new note body');
-      done();
+    it('should create a new user', function (done) {
+        chai.request('http://localhost:3000')
+        .post('/api/users')
+        .send({email: 'JohnSmith796@example.com', password: 'S0methingAw3some!'})
+        .end(function (err, res) {
+            expect(err).to.be.null;
+            expect(res.body).to.have.property('jwt');
+            aJWT = res.body.jwt;
+            done();
+        });
     });
-  });
 
-  it('should be able to destroy a note', function(done) {
-    chai.request('http://localhost:3000')
-    .delete('/api/notes/' + id)
-    .end(function(err, res) {
-      expect(err).to.eql(null);
-      expect(res.body.msg).to.eql('success!');
-      done();
+    it('should new notes', function (done) {
+        chai.request('http://localhost:3000')
+        .post('/v1/api/notes')
+        .set({'jwt': aJWT})
+        .send({ noteBody: 'get something at the store'})
+        .end(function (err, res) {
+            expect(err).to.be.null;
+            expect(res.body).to.have.property('_id');
+            id = (res.body._id);
+            expect(res.body.noteBody).to.eql('get something at the store');
+            done();
+        });
     });
-  });
+
+    it('should get an index', function(done) {
+        chai.request('http://localhost:3000')
+        .get('/v1/api/notes')
+        .set({jwt: aJWT})
+        .end(function(err, res) {
+            expect(err).to.eql(null);
+            expect(Array.isArray(res.body)).to.be.true;
+            done();
+        });
+    });
+
+    it('should be able to get a note body', function(done) {
+        chai.request('http://localhost:3000')
+        .get('/v1/api/notes/' + id)
+        .set({jwt: aJWT})
+        .end(function( err, res) {
+            expect(err).to.eql(null);
+            expect(res.body.noteBody).to.eql('get something at the store');
+            done();
+        });
+    });
+
+    it('should be able to update a note', function(done) {
+        chai.request('http://localhost:3000')
+        .put('/v1/api/notes/' + id)
+        .set({jwt: aJWT})
+        .send({noteBody: 'read a book'})
+        .end(function (err, res) {
+            expect(err).to.eql(null);
+            expect(res.body.noteBody).to.eql('read a book');
+            done();
+        });
+    });
+
+    it('should be able to delete the note', function(done) {
+        chai.request('http://localhost:3000')
+        .delete('/v1/api/notes/' + id)
+        .set({jwt: aJWT})
+        .end(function (err, res) {
+            expect(err).to.eql(null);
+            expect(res.body.msg).to.eql('success!');
+            done();
+        });
+
+    });
+
 });
